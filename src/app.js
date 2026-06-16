@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import authRouter from "./modules/auth/auth.routes.js";
 
 const app = express();
 
@@ -17,6 +18,8 @@ app.use(
     allowheaders: ["Content-Type", "Authorization"],
   }),
 );
+
+app.use("/api/v1/auth", authRouter);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Backend Project Brother");
