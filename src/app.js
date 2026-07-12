@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import authRouter from "./modules/auth/auth.routes.js";
+import analysisRouter from "./modules/analysis/analysis.routes.js";
 import resumeRouter from "./modules/resume/resume.routes.js";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(
 );
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/analysis", analysisRouter);
 app.use("/api/v1/resumes", resumeRouter);
 
 app.get("/", (req, res) => {

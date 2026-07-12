@@ -1,21 +1,41 @@
 import { User } from "./user.model.js";
-import bcrypt from "bcrypt";
+import { ApiResponse } from "../../utils/api-response.js";
+import { asyncHandler } from "../../utils/async-handler.js";
+import { ApiError } from "../../utils/api-error.js";
 
+const generateAccessAndRefreshTokens = async function (userID) {
+  try {
+    const user = await User.findById(userID);
+
+    if (!user) {
+      throw new ApiError(404, "User not found.");
+    }
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw error;
+  }
+};
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
     if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "All fields are required",
-      });
+      throw new ApiError(400, "All fields are required");
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
-      return res.status(409).json({
-        message: "User already exists",
-      });
+      throw new ApiError(
+        409,
+        "User with provided username or email already exists.",
+        [],
+      );
     }
 
     const user = await User.create({
@@ -24,7 +44,16 @@ export const registerUser = async (req, res) => {
       password,
     });
 
-    const createdUser = await User.findById(user._id).select("-password");
+    const { accessToken, refreshToken } = generateAccessAndRefreshTokens(
+      user._id,
+    );
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    const createdUser = await User.findById(user._id).select(
+      "-password -refreshToken",
+    );
 
     if (!createdUser) {
       return res.status(500).json({
@@ -32,12 +61,10 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const token = user.generateAccessToken();
-
     return res.status(201).json({
       message: "User created successfully",
       user: createdUser,
-      token,
+      accessToken,
     });
   } catch (error) {
     console.error(error);
@@ -81,14 +108,12 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Generate access token
-    const token = user.generateAccessToken();
-
-    const loggedUser = await User.findById(user._id).select("-password");
+    const loggedUser = await User.findById(user._id).select(
+      "-password -refreshToken",
+    );
 
     return res.status(200).json({
       user: loggedUser,
-      token,
     });
   } catch (error) {
     console.error(error);
