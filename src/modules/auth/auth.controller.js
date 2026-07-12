@@ -44,12 +44,7 @@ export const registerUser = async (req, res) => {
       password,
     });
 
-    const { accessToken, refreshToken } = generateAccessAndRefreshTokens(
-      user._id,
-    );
-
-    user.refreshToken = refreshToken;
-    await user.save();
+    const { accessToken } = await generateAccessAndRefreshTokens(user._id);
 
     const createdUser = await User.findById(user._id).select(
       "-password -refreshToken",
@@ -112,8 +107,11 @@ export const loginUser = async (req, res) => {
       "-password -refreshToken",
     );
 
+    const { accessToken } = await generateAccessAndRefreshTokens(user._id);
+
     return res.status(200).json({
       user: loggedUser,
+      accessToken,
     });
   } catch (error) {
     console.error(error);
