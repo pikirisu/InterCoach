@@ -20,6 +20,21 @@ const generateAccessAndRefreshTokens = async function (userID) {
     throw error;
   }
 };
+
+const sendAuthErrorResponse = (res, error) => {
+  console.error(error);
+
+  if (error instanceof ApiError) {
+    return res.status(error.statusCode).json({
+      message: error.message,
+    });
+  }
+
+  return res.status(500).json({
+    message: "Internal Server Error",
+  });
+};
+
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -62,11 +77,7 @@ export const registerUser = async (req, res) => {
       accessToken,
     });
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Internal Server Error",
-    });
+    return sendAuthErrorResponse(res, error);
   }
 };
 
@@ -114,10 +125,6 @@ export const loginUser = async (req, res) => {
       accessToken,
     });
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Internal Server Error",
-    });
+    return sendAuthErrorResponse(res, error);
   }
 };
