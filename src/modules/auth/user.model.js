@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -27,6 +28,11 @@ const userSchema = new Schema({
     type: String,
     default: "",
   },
+  sessionVersion: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -49,6 +55,8 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      sessionVersion: this.sessionVersion || 0,
+      tokenId: randomUUID(),
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -61,6 +69,8 @@ userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      sessionVersion: this.sessionVersion || 0,
+      tokenId: randomUUID(),
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
