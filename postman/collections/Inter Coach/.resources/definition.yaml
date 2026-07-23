@@ -1,0 +1,34 @@
+$kind: collection
+name: Inter Coach
+description: |-
+  API test suite for the Inter Coach Node.js/Express backend.
+
+  ## How to run
+  1. Select the **Inter Coach** environment
+  2. Run **Healthcheck** to confirm the API is reachable
+  3. Run **Register User** or **Login User** to save `authToken`
+  4. Upload a resume PDF via **Upload Resume**
+  5. Run the analysis and history requests in order
+
+  ## Response convention
+  Success responses use `{ success, statusCode, message, data }`.
+  Error responses use `{ success, statusCode, message, errors }`.
+
+  ## Modules
+  - **Health** - Server and database status
+  - **Auth** - Register and login
+  - **Resume** - Upload, list, fetch, delete resumes
+  - **Analysis** - AI-powered resume analysis
+scripts:
+  - type: http:beforeRequest
+    language: text/javascript
+    code: |-
+      const token = pm.environment.get("authToken");
+      const existingAuth = pm.request.headers.get("Authorization");
+
+      if (token && !existingAuth) {
+        pm.request.headers.add({
+          key: "Authorization",
+          value: "Bearer " + token
+        });
+      }

@@ -1,0 +1,41 @@
+$kind: http-request
+name: Upload Resume
+method: POST
+url: "{{baseUrl}}/api/v1/resumes"
+order: 1000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+body:
+  type: formdata
+  content:
+    - key: resume
+      type: file
+      src: ""
+      description: "Select a PDF file to upload"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      const resume = json.data && json.data.resume;
+
+      pm.test("Status is 201 Created", function () {
+        pm.response.to.have.status(201);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 201 });
+        pm.expect(json).to.have.property("data");
+      });
+
+      pm.test("Response has resume object", function () {
+        pm.expect(resume).to.be.an("object");
+        pm.expect(resume).to.have.property("resumeId");
+        pm.expect(resume).to.have.property("fileName");
+        pm.expect(resume).to.have.property("status");
+      });
+
+      if (resume && resume.resumeId) {
+        pm.environment.set("resumeId", resume.resumeId);
+      }

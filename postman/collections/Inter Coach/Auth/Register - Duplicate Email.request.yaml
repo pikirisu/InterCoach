@@ -1,0 +1,31 @@
+$kind: http-request
+name: Register - Duplicate Email
+method: POST
+url: "{{baseUrl}}/api/v1/auth/register"
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password": "Test@1234"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+
+      pm.test("Status is 409 Conflict", function () {
+        pm.response.to.have.status(409);
+      });
+
+      pm.test("Response uses error envelope", function () {
+        pm.expect(json).to.include({ success: false, statusCode: 409 });
+        pm.expect(json.message.toLowerCase()).to.include("already exists");
+        pm.expect(json).to.not.have.property("data");
+      });

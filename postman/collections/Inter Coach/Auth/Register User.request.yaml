@@ -1,0 +1,60 @@
+$kind: http-request
+name: Register User
+method: POST
+url: "{{baseUrl}}/api/v1/auth/register"
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password": "Test@1234"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      const data = json.data || {};
+
+      pm.test("Status is 201 Created", function () {
+        pm.response.to.have.status(201);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 201 });
+        pm.expect(json).to.have.property("message", "User created successfully");
+        pm.expect(json).to.have.property("data");
+      });
+
+      pm.test("Response has token pair", function () {
+        pm.expect(data.accessToken).to.be.a("string").and.not.empty;
+        pm.expect(data.refreshToken).to.be.a("string").and.not.empty;
+      });
+
+      pm.test("Response has safe user object", function () {
+        pm.expect(data.user).to.be.an("object");
+        pm.expect(data.user).to.have.property("_id");
+        pm.expect(data.user).to.have.property("name");
+        pm.expect(data.user).to.have.property("email");
+        pm.expect(data.user.email).to.equal(data.user.email.toLowerCase());
+        pm.expect(data.user).to.not.have.property("password");
+        pm.expect(data.user).to.not.have.property("refreshToken");
+        pm.expect(data.user).to.not.have.property("sessionVersion");
+      });
+
+      if (data.accessToken) {
+        pm.environment.set("authToken", data.accessToken);
+      }
+
+      if (data.refreshToken) {
+        pm.environment.set("refreshToken", data.refreshToken);
+      }
+
+      if (data.user && data.user._id) {
+        pm.environment.set("userId", data.user._id);
+      }

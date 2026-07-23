@@ -1,0 +1,541 @@
+openapi: 3.1.0
+info:
+  title: Inter Coach API
+  version: 1.0.0
+  description: Backend API for uploading resumes and generating AI-backed resume analysis.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Resumes
+  - name: Analysis
+
+paths:
+  /api/v1/health:
+    get:
+      tags: [Health]
+      summary: Check server and database status
+      responses:
+        "200":
+          description: Server health state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a user and start an authenticated session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Test User
+                email:
+                  type: string
+                  format: email
+                  example: testuser@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: Test@1234
+      responses:
+        "201":
+          description: User created with access and refresh tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and rotate the active session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: testuser@example.com
+                password:
+                  type: string
+                  format: password
+                  example: Test@1234
+      responses:
+        "200":
+          description: User logged in with access and refresh tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Rotate a refresh token and receive a new access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: Token pair refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and invalidate the current session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Session invalidated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          userId:
+                            type: string
+        "401":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/resumes:
+    get:
+      tags: [Resumes]
+      summary: List resumes uploaded by the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Resume list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          resumes:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/ResumeSummary"
+        "401":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Resumes]
+      summary: Upload a PDF resume and extract text
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [resume]
+              properties:
+                resume:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Resume uploaded and processed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          resume:
+                            $ref: "#/components/schemas/ResumeDetail"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/resumes/{resumeId}:
+    get:
+      tags: [Resumes]
+      summary: Fetch one owned resume
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ResumeId"
+      responses:
+        "200":
+          description: Resume details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          resume:
+                            $ref: "#/components/schemas/ResumeDetail"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Resumes]
+      summary: Delete one owned resume and its uploaded file
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ResumeId"
+      responses:
+        "200":
+          description: Resume deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          resumeId:
+                            type: string
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/analysis/resume/{resumeId}:
+    post:
+      tags: [Analysis]
+      summary: Generate AI analysis for an owned processed resume
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ResumeId"
+      responses:
+        "201":
+          description: Analysis created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          analysis:
+                            $ref: "#/components/schemas/Analysis"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    get:
+      tags: [Analysis]
+      summary: List analyses for an owned resume
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ResumeId"
+      responses:
+        "200":
+          description: Analysis history
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          analyses:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Analysis"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/analysis/{analysisId}:
+    get:
+      tags: [Analysis]
+      summary: Fetch one owned analysis
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: analysisId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Analysis details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          analysis:
+                            $ref: "#/components/schemas/Analysis"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ResumeId:
+      name: resumeId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+
+  schemas:
+    ApiSuccess:
+      type: object
+      required: [statusCode, data, message, success]
+      properties:
+        statusCode:
+          type: integer
+        data:
+          type: object
+        message:
+          type: string
+        success:
+          type: boolean
+          const: true
+
+    ApiError:
+      type: object
+      required: [success, statusCode, message, errors]
+      properties:
+        success:
+          type: boolean
+          const: false
+        statusCode:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+        data:
+          type: object
+
+    HealthResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: ok
+                uptime:
+                  type: number
+                timestamp:
+                  type: string
+                  format: date-time
+                database:
+                  type: object
+                  properties:
+                    readyState:
+                      type: integer
+                    status:
+                      type: string
+
+    AuthResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [user, accessToken, refreshToken]
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+                accessToken:
+                  type: string
+                refreshToken:
+                  type: string
+
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+
+    ResumeSummary:
+      type: object
+      properties:
+        resumeId:
+          type: string
+        fileName:
+          type: string
+        filePath:
+          type: string
+        fileSize:
+          type: integer
+        status:
+          type: string
+          enum: [uploaded, processing, processed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ResumeDetail:
+      allOf:
+        - $ref: "#/components/schemas/ResumeSummary"
+        - type: object
+          properties:
+            mimeType:
+              type: string
+              example: application/pdf
+            extractedText:
+              type: string
+
+    Analysis:
+      type: object
+      properties:
+        analysisId:
+          type: string
+        resumeId:
+          type: string
+        status:
+          type: string
+          enum: [processing, completed, failed]
+        overallScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        aiModel:
+          type: string
+        errorMessage:
+          type:
+            - string
+            - "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

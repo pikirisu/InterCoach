@@ -1,0 +1,23 @@
+$kind: http-request
+name: "Get Resume - Invalid ID"
+method: GET
+url: "{{baseUrl}}/api/v1/resumes/invalid-id-123"
+order: 4000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+
+      pm.test("Status is 400 Bad Request", function () {
+        pm.response.to.have.status(400);
+      });
+
+      pm.test("Response uses error envelope", function () {
+        pm.expect(json).to.include({ success: false, statusCode: 400 });
+        pm.expect(json.message.toLowerCase()).to.include("invalid resume id");
+        pm.expect(json).to.not.have.property("data");
+      });

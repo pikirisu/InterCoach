@@ -1,0 +1,23 @@
+$kind: http-request
+name: Get Analysis - Not Found
+method: GET
+url: "{{baseUrl}}/api/v1/analysis/000000000000000000000001"
+order: 4000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+
+      pm.test("Status is 404 Not Found", function () {
+        pm.response.to.have.status(404);
+      });
+
+      pm.test("Response uses error envelope", function () {
+        pm.expect(json).to.include({ success: false, statusCode: 404 });
+        pm.expect(json.message.toLowerCase()).to.include("not found");
+        pm.expect(json).to.not.have.property("data");
+      });

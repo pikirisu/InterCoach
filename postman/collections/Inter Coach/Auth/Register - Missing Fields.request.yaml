@@ -1,0 +1,29 @@
+$kind: http-request
+name: "Register - Missing Fields"
+method: POST
+url: "{{baseUrl}}/api/v1/auth/register"
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "testuser@example.com"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+
+      pm.test("Status is 400 Bad Request", function () {
+        pm.response.to.have.status(400);
+      });
+
+      pm.test("Response uses error envelope", function () {
+        pm.expect(json).to.include({ success: false, statusCode: 400 });
+        pm.expect(json.message).to.be.a("string").and.not.empty;
+        pm.expect(json).to.not.have.property("data");
+      });

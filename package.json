@@ -1,17 +1,19 @@
 {
-  "name": "backend_one",
+  "name": "inter-coach-api",
   "version": "1.0.0",
-  "description": "Backend Project to learn",
+  "description": "Backend API for AI resume analysis and interview coaching",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "dev": "nodemon ./src/index.js",
     "start": "node ./src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "keywords": [
-    "Backend",
-    "Authorization"
+    "resume-analysis",
+    "interview-coaching",
+    "express",
+    "ai"
   ],
   "author": "akshat chaurasia",
   "license": "ISC",

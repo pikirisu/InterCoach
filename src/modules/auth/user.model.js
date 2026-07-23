@@ -56,7 +56,6 @@ userSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       sessionVersion: this.sessionVersion || 0,
-      tokenId: randomUUID(),
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -70,7 +69,6 @@ userSchema.methods.generateRefreshToken = function () {
     {
       _id: this._id,
       sessionVersion: this.sessionVersion || 0,
-      tokenId: randomUUID(),
     },
     process.env.REFRESH_TOKEN_SECRET,
     {

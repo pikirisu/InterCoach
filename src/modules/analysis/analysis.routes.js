@@ -5,12 +5,16 @@ import {
   getAnalysis,
   getResumeAnalysisHistory,
 } from "./analysis.controller.js";
+import { asyncHandler } from "../../utils/async-handler.js";
 
 const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/resume/:resumeId").post(createAnalysis).get(getResumeAnalysisHistory);
-router.route("/:analysisId").get(getAnalysis);
+router
+  .route("/resume/:resumeId")
+  .post(asyncHandler(createAnalysis))
+  .get(asyncHandler(getResumeAnalysisHistory));
+router.route("/:analysisId").get(asyncHandler(getAnalysis));
 
 export default router;

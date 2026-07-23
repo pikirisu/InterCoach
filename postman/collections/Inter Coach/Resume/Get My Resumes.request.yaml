@@ -1,0 +1,37 @@
+$kind: http-request
+name: Get My Resumes
+method: GET
+url: "{{baseUrl}}/api/v1/resumes"
+order: 2000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      const resumes = json.data && json.data.resumes;
+
+      pm.test("Status is 200 OK", function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 200 });
+        pm.expect(json).to.have.property("data");
+      });
+
+      pm.test("Response has resumes array", function () {
+        pm.expect(resumes).to.be.an("array");
+      });
+
+      pm.test("Each resume has MVP summary fields", function () {
+        resumes.forEach(function (resume) {
+          pm.expect(resume).to.have.property("resumeId");
+          pm.expect(resume).to.have.property("fileName");
+          pm.expect(resume).to.have.property("filePath");
+          pm.expect(resume).to.have.property("fileSize");
+          pm.expect(resume).to.have.property("status");
+        });
+      });

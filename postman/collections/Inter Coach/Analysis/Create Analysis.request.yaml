@@ -1,0 +1,35 @@
+$kind: http-request
+name: Create Analysis
+method: POST
+url: "{{baseUrl}}/api/v1/analysis/resume/{{resumeId}}"
+order: 1000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      const analysis = json.data && json.data.analysis;
+
+      pm.test("Status is 201 Created", function () {
+        pm.response.to.have.status(201);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 201 });
+        pm.expect(json).to.have.property("data");
+      });
+
+      pm.test("Response has analysis object", function () {
+        pm.expect(analysis).to.be.an("object");
+        pm.expect(analysis).to.have.property("analysisId");
+        pm.expect(analysis).to.have.property("resumeId");
+        pm.expect(analysis).to.have.property("status");
+        pm.expect(analysis).to.have.property("overallScore");
+      });
+
+      if (analysis && analysis.analysisId) {
+        pm.environment.set("analysisId", analysis.analysisId);
+      }

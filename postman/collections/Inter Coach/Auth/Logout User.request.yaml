@@ -1,0 +1,26 @@
+$kind: http-request
+name: Logout User
+method: POST
+url: "{{baseUrl}}/api/v1/auth/logout"
+order: 2200
+headers:
+  - key: Authorization
+    value: Bearer {{authToken}}
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+
+      pm.test("Status is 200 OK", function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 200 });
+        pm.expect(json).to.have.property("message", "User logged out successfully");
+        pm.expect(json.data).to.have.property("userId");
+      });
+
+      pm.environment.unset("authToken");
+      pm.environment.unset("refreshToken");

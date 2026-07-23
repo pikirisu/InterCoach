@@ -1,0 +1,36 @@
+$kind: http-request
+name: Get Resume Analysis History
+method: GET
+url: "{{baseUrl}}/api/v1/analysis/resume/{{resumeId}}"
+order: 3000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      const analyses = json.data && json.data.analyses;
+
+      pm.test("Status is 200 OK", function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 200 });
+        pm.expect(json).to.have.property("data");
+      });
+
+      pm.test("Response has analyses array", function () {
+        pm.expect(analyses).to.be.an("array");
+      });
+
+      pm.test("Each analysis has MVP fields", function () {
+        analyses.forEach(function (analysis) {
+          pm.expect(analysis).to.have.property("analysisId");
+          pm.expect(analysis).to.have.property("resumeId");
+          pm.expect(analysis).to.have.property("status");
+          pm.expect(analysis).to.have.property("overallScore");
+        });
+      });

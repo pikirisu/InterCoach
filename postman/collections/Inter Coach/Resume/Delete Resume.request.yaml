@@ -1,0 +1,23 @@
+$kind: http-request
+name: Delete Resume
+method: DELETE
+url: "{{baseUrl}}/api/v1/resumes/{{resumeId}}"
+order: 5000
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+
+      pm.test("Status is 200 OK", function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test("Response uses API envelope", function () {
+        pm.expect(json).to.include({ success: true, statusCode: 200 });
+        pm.expect(json.message).to.equal("Resume deleted successfully");
+        pm.expect(json.data).to.have.property("resumeId");
+      });

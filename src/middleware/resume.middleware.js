@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import multer from "multer";
 import { RESUME_MAX_FILE_SIZE } from "../utils/constants.js";
+import { ApiError } from "../utils/api-error.js";
 
 const uploadsRoot = path.join(process.cwd(), "uploads", "resumes");
 
@@ -50,22 +51,16 @@ export const uploadResumeFile = (req, res, next) => {
   upload.single("resume")(req, res, (error) => {
     if (error instanceof multer.MulterError) {
       if (error.code === "LIMIT_FILE_SIZE") {
-        return res.status(400).json({
-          message: "Resume must be 5 MB or smaller",
-        });
+        return next(new ApiError(400, "Resume must be 5 MB or smaller"));
       }
 
-      return res.status(400).json({
-        message: error.message,
-      });
+      return next(new ApiError(400, error.message));
     }
 
     if (error) {
-      return res.status(400).json({
-        message: error.message || "Invalid file upload",
-      });
+      return next(new ApiError(400, error.message || "Invalid file upload"));
     }
 
-    next();
+    return next();
   });
 };
