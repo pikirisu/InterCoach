@@ -2,7 +2,7 @@ $kind: http-request
 name: "Register - Missing Fields"
 method: POST
 url: "{{baseUrl}}/api/v1/auth/register"
-order: 3000
+order: 7000
 headers:
   - key: Content-Type
     value: application/json

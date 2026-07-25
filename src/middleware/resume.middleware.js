@@ -27,9 +27,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const isPdf =
-    file.mimetype === "application/pdf" &&
-    path.extname(file.originalname).toLowerCase() === ".pdf";
+  const isPdf = path.extname(file.originalname).toLowerCase() === ".pdf";
 
   if (!isPdf) {
     cb(new Error("Only PDF resumes are allowed"));

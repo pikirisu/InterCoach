@@ -1,13 +1,13 @@
 $kind: http-request
-name: "Analysis - Unauthorized"
+name: Analysis - Unauthorized
 method: GET
 url: "{{baseUrl}}/api/v1/analysis/{{analysisId}}"
 order: 5000
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |-
       const json = pm.response.json();
+
 
       pm.test("Status is 401 Unauthorized", function () {
         pm.response.to.have.status(401);
@@ -18,3 +18,7 @@ scripts:
         pm.expect(json.message).to.equal("Unauthorized");
         pm.expect(json).to.not.have.property("data");
       });
+    language: text/javascript
+  - type: beforeRequest
+    code: skipAuth = true;
+    language: text/javascript

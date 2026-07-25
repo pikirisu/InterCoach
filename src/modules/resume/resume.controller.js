@@ -6,6 +6,7 @@ import { extractResumeText } from "./resume.service.js";
 import { ResumeStatusEnum } from "../../utils/constants.js";
 import { ApiError } from "../../utils/api-error.js";
 import { ApiResponse } from "../../utils/api-response.js";
+import { validatePdf } from "../../utils/validatePdf.js";
 
 const buildStoredFilePath = (absolutePath) =>
   path.relative(process.cwd(), absolutePath).replace(/\\/g, "/");
@@ -37,6 +38,14 @@ export const uploadResume = async (req, res) => {
   try {
     if (!req.file) {
       throw new ApiError(400, "Resume PDF is required");
+    }
+
+    const isValidPdf = await validatePdf(req.file.path);
+
+    if (!isValidPdf) {
+      await fs.unlink(req.file.path);
+
+      throw new ApiError(400, "Uploaded file is not a valid PDF.");
     }
 
     resume = await Resume.create({
