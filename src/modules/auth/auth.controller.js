@@ -65,6 +65,9 @@ const getSafeUserById = (userId) =>
   User.findById(userId).select(SAFE_USER_FIELDS);
 
 export const registerUser = async (req, res) => {
+  return res.status(403).json({
+    message: "Registration is currently disabled.",
+  });
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
