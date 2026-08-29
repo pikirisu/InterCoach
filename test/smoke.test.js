@@ -3,6 +3,8 @@ import { once } from "node:events";
 import test from "node:test";
 import jwt from "jsonwebtoken";
 import { User } from "../src/modules/auth/user.model.js";
+import { Resume } from "../src/modules/resume/resume.model.js";
+import { JobDescription } from "../src/modules/jobDescription/jobDescription.model.js";
 
 let app;
 let server;
@@ -50,6 +52,37 @@ const signRefreshToken = (userId, sessionVersion) =>
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
     type: "refresh",
   });
+
+const withPatchedModelMethods = async (Model, methods, callback) => {
+  const originals = new Map();
+
+  for (const [methodName, implementation] of Object.entries(methods)) {
+    originals.set(methodName, Model[methodName]);
+    Model[methodName] = implementation;
+  }
+
+  try {
+    return await callback();
+  } finally {
+    for (const [methodName, original] of originals) {
+      Model[methodName] = original;
+    }
+  }
+};
+
+const authHeaderForUser = (userId, sessionVersion) => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${signAccessToken(userId, sessionVersion)}`,
+});
+
+const withAuthenticatedUser = (userId, sessionVersion, callback) =>
+  withPatchedModelMethods(
+    User,
+    {
+      findById: () => ({ _id: userId, sessionVersion }),
+    },
+    callback,
+  );
 
 const withPatchedUserMethods = async (methods, callback) => {
   const originals = new Map();
@@ -280,6 +313,138 @@ test("logout invalidates the current access-token session", async () => {
       assert.equal(protectedResult.json.success, false);
       assert.equal(protectedResult.json.message, "Unauthorized");
     },
+  );
+});
+
+test("protected job-description routes reject missing bearer token", async () => {
+  const { response, json } = await requestJson("/api/v1/job-descriptions");
+
+  assert.equal(response.status, 401);
+  assert.equal(json.success, false);
+  assert.equal(json.message, "Unauthorized");
+});
+
+test("job description create validation requires title and text", async () => {
+  const userId = "507f1f77bcf86cd799439021";
+  const sessionVersion = 0;
+
+  await withAuthenticatedUser(userId, sessionVersion, async () => {
+    const { response, json } = await requestJson("/api/v1/job-descriptions", {
+      method: "POST",
+      headers: authHeaderForUser(userId, sessionVersion),
+      body: JSON.stringify({ title: "Backend Engineer" }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal(json.success, false);
+    assert.equal(json.message, "Title and job description text are required");
+  });
+});
+
+test("job description detail rejects a malformed id before touching the database", async () => {
+  const userId = "507f1f77bcf86cd799439022";
+  const sessionVersion = 0;
+
+  await withAuthenticatedUser(userId, sessionVersion, async () => {
+    const { response, json } = await requestJson("/api/v1/job-descriptions/not-an-id", {
+      headers: authHeaderForUser(userId, sessionVersion),
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal(json.success, false);
+    assert.equal(json.message, "Invalid job description id");
+  });
+});
+
+test("job description detail returns 404 for another user's document", async () => {
+  const userId = "507f1f77bcf86cd799439023";
+  const sessionVersion = 0;
+  const jobDescriptionId = "507f1f77bcf86cd799439099";
+
+  await withAuthenticatedUser(userId, sessionVersion, () =>
+    withPatchedModelMethods(
+      JobDescription,
+      {
+        findOne: () => null,
+      },
+      async () => {
+        const { response, json } = await requestJson(
+          `/api/v1/job-descriptions/${jobDescriptionId}`,
+          {
+            headers: authHeaderForUser(userId, sessionVersion),
+          },
+        );
+
+        assert.equal(response.status, 404);
+        assert.equal(json.success, false);
+        assert.equal(json.message, "Job description not found");
+      },
+    ),
+  );
+});
+
+test("protected match routes reject missing bearer token", async () => {
+  const { response, json } = await requestJson(
+    "/api/v1/matches/resume/507f1f77bcf86cd799439099",
+  );
+
+  assert.equal(response.status, 401);
+  assert.equal(json.success, false);
+  assert.equal(json.message, "Unauthorized");
+});
+
+test("match creation rejects a malformed resume id before touching the database", async () => {
+  const userId = "507f1f77bcf86cd799439024";
+  const sessionVersion = 0;
+  const jobDescriptionId = "507f1f77bcf86cd799439099";
+
+  await withAuthenticatedUser(userId, sessionVersion, async () => {
+    const { response, json } = await requestJson(
+      `/api/v1/matches/resume/not-an-id/job-description/${jobDescriptionId}`,
+      {
+        method: "POST",
+        headers: authHeaderForUser(userId, sessionVersion),
+      },
+    );
+
+    assert.equal(response.status, 400);
+    assert.equal(json.success, false);
+    assert.equal(json.message, "Invalid resume id");
+  });
+});
+
+test("match creation rejects a resume owned by another user", async () => {
+  const userId = "507f1f77bcf86cd799439025";
+  const sessionVersion = 0;
+  const resumeId = "507f1f77bcf86cd799439098";
+  const jobDescriptionId = "507f1f77bcf86cd799439099";
+
+  await withAuthenticatedUser(userId, sessionVersion, () =>
+    withPatchedModelMethods(
+      Resume,
+      {
+        findById: () => ({
+          select: async () => ({
+            _id: resumeId,
+            user: "507f1f77bcf86cd799439000",
+            extractedText: "Experienced engineer.",
+          }),
+        }),
+      },
+      async () => {
+        const { response, json } = await requestJson(
+          `/api/v1/matches/resume/${resumeId}/job-description/${jobDescriptionId}`,
+          {
+            method: "POST",
+            headers: authHeaderForUser(userId, sessionVersion),
+          },
+        );
+
+        assert.equal(response.status, 403);
+        assert.equal(json.success, false);
+        assert.equal(json.message, "Not authorized");
+      },
+    ),
   );
 });
 

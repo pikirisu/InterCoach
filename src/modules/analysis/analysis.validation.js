@@ -1,16 +1,7 @@
 import mongoose from "mongoose";
+import { normalizeStringArray } from "../../utils/normalizeStringArray.js";
 
 export const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
-
-const normalizeStringArray = (value, fieldName) => {
-  if (!Array.isArray(value)) {
-    throw new Error(`${fieldName} must be an array of strings`);
-  }
-
-  return value
-    .map((item) => String(item ?? "").trim())
-    .filter(Boolean);
-};
 
 export const normalizeAnalysisPayload = (payload = {}) => {
   const numericScore = Number(payload.overallScore);

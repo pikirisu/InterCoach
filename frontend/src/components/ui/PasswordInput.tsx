@@ -18,8 +18,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     const Icon = isVisible ? EyeOff : Eye;
 
     return (
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-slate-700" htmlFor={inputId}>
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-slate-200" htmlFor={inputId}>
           {label}
         </label>
         <div className="relative">
@@ -28,8 +28,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             aria-describedby={describedBy}
             aria-invalid={error ? true : props["aria-invalid"]}
             className={cn(
-              "h-10 w-full rounded-md border border-slate-200 bg-white px-3 pr-11 text-sm text-slate-950 shadow-sm shadow-slate-950/[0.02] outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100",
-              error && "border-red-300 focus:border-red-400 focus:ring-red-100",
+              "h-11 w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 pr-12 text-sm text-slate-50 outline-none transition placeholder:text-slate-500 hover:border-slate-600 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20",
+              error && "border-red-500/50 focus:border-red-400 focus:ring-red-500/20",
               className,
             )}
             id={inputId}
@@ -39,7 +39,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           <button
             aria-label={isVisible ? "Hide password" : "Show password"}
             aria-pressed={isVisible}
-            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-slate-500 transition hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+            className="absolute inset-y-1 right-1 flex w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20"
             onClick={() => setIsVisible((currentValue) => !currentValue)}
             type="button"
           >
@@ -47,7 +47,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           </button>
         </div>
         {error ? (
-          <p className="text-sm text-red-600" id={errorId}>
+          <p className="text-sm text-red-400" id={errorId}>
             {error}
           </p>
         ) : null}

@@ -1,4 +1,14 @@
-import { ClipboardList, FileText, LayoutDashboard, Sparkles, X } from "lucide-react";
+import {
+  BarChart3,
+  Briefcase,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  Sparkles,
+  UploadCloud,
+  UserCircle,
+  X,
+} from "lucide-react";
 import { NavLink } from "react-router";
 
 import { cn } from "../../utils/cn";
@@ -9,22 +19,52 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navigationItems = [
+const navigationSections = [
   {
-    end: true,
-    icon: LayoutDashboard,
-    label: "Dashboard",
-    to: "/app",
+    items: [
+      {
+        end: true,
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        to: "/app",
+      },
+      {
+        icon: UploadCloud,
+        label: "Upload",
+        to: "/app/upload",
+      },
+      {
+        icon: FileText,
+        label: "Library",
+        to: "/app/resumes",
+      },
+      {
+        icon: ClipboardList,
+        label: "Analysis",
+        to: "/app/analysis",
+      },
+      {
+        icon: Briefcase,
+        label: "Job Descriptions",
+        to: "/app/job-descriptions",
+      },
+      {
+        icon: BarChart3,
+        label: "Analytics",
+        to: "/app/analytics",
+      },
+    ],
+    label: "Workspace",
   },
   {
-    icon: FileText,
-    label: "Resumes",
-    to: "/app/resumes",
-  },
-  {
-    icon: ClipboardList,
-    label: "Analysis",
-    to: "/app/analysis",
+    items: [
+      {
+        icon: UserCircle,
+        label: "Profile",
+        to: "/app/profile",
+      },
+    ],
+    label: "Account",
   },
 ];
 
@@ -34,7 +74,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen ? (
         <button
           aria-label="Close navigation"
-          className="fixed inset-0 z-30 bg-slate-950/35 lg:hidden"
+          className="fixed inset-0 z-30 bg-slate-950/35 backdrop-blur-sm lg:hidden"
           onClick={onClose}
           type="button"
         />
@@ -42,54 +82,57 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-800 bg-slate-900/95 backdrop-blur-xl transition-transform duration-200 lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
-          <NavLink className="flex items-center gap-2 text-sm font-semibold text-slate-950" onClick={onClose} to="/app">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm shadow-slate-950/10">
-              <Sparkles aria-hidden="true" size={16} />
+        <div className="flex h-20 items-center justify-between px-5">
+          <NavLink className="flex items-center gap-3 text-sm font-semibold text-slate-50" onClick={onClose} to="/app">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-[0_12px_28px_rgba(0,0,0,0.35)]">
+              <Sparkles aria-hidden="true" size={19} />
             </span>
-            InterCoach
+            <span>
+              <span className="block text-base">InterCoach</span>
+              <span className="block text-xs font-medium text-slate-500">Resume Intelligence</span>
+            </span>
           </NavLink>
           <Button aria-label="Close navigation" className="size-9 px-0 lg:hidden" onClick={onClose} size="sm" variant="ghost">
             <X aria-hidden="true" size={18} />
           </Button>
         </div>
 
-        <nav aria-label="Main navigation" className="flex-1 space-y-1 px-3 py-4">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
+        <nav aria-label="Main navigation" className="flex-1 space-y-7 px-4 py-4">
+          {navigationSections.map((section) => (
+            <div key={section.label}>
+              <p className="px-3 text-xs font-semibold uppercase text-slate-500">{section.label}</p>
+              <div className="mt-2 space-y-1">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
 
-            return (
-              <NavLink
-                className={({ isActive }) =>
-                  cn(
-                    "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-slate-950 text-white shadow-sm shadow-slate-950/10"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
-                  )
-                }
-                end={item.end}
-                key={item.to}
-                onClick={onClose}
-                to={item.to}
-              >
-                <Icon aria-hidden="true" size={18} />
-                {item.label}
-              </NavLink>
-            );
-          })}
+                  return (
+                    <NavLink
+                      className={({ isActive }) =>
+                        cn(
+                          "group flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition-[background-color,color,box-shadow] duration-200",
+                          isActive
+                            ? "bg-blue-500 text-white shadow-[0_14px_30px_rgba(0,0,0,0.35)]"
+                            : "text-slate-400 hover:bg-slate-800 hover:text-slate-50",
+                        )
+                      }
+                      end={item.end}
+                      key={item.to}
+                      onClick={onClose}
+                      to={item.to}
+                    >
+                      <Icon aria-hidden="true" size={18} />
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
-
-        <div className="border-t border-slate-200 p-4">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs font-medium text-slate-950">Resume intelligence</p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">Upload, analyze, and track feedback from one focused workspace.</p>
-          </div>
-        </div>
       </aside>
     </>
   );

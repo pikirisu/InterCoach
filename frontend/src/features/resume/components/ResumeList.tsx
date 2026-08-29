@@ -1,4 +1,4 @@
-import { BarChart3, Eye, FileText, Trash2 } from "lucide-react";
+import { BarChart3, Eye, FileText, History, Trash2 } from "lucide-react";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, StatusBadge } from "../../../components/ui";
 import type { ResumeSummary } from "../../../types/resume";
@@ -16,12 +16,17 @@ export function ResumeList({ analyzingResumeId, deletingResumeId, onAnalyze, onD
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Uploaded Resumes</CardTitle>
-        <CardDescription>{resumes.length} resume{resumes.length === 1 ? "" : "s"} in this workspace.</CardDescription>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Resume Library</CardTitle>
+            <CardDescription>{resumes.length} resume{resumes.length === 1 ? "" : "s"} organized in this workspace.</CardDescription>
+          </div>
+          <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-400">PDF workspace</span>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <div className="hidden grid-cols-[1.5fr_120px_120px_170px_220px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium uppercase text-slate-500 lg:grid">
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+          <div className="hidden grid-cols-[1.45fr_120px_110px_160px_230px] gap-4 border-b border-slate-800 bg-slate-800/40 px-4 py-3 text-xs font-semibold uppercase text-slate-500 xl:grid">
             <span>Resume</span>
             <span>Status</span>
             <span>Size</span>
@@ -29,7 +34,7 @@ export function ResumeList({ analyzingResumeId, deletingResumeId, onAnalyze, onD
             <span className="text-right">Actions</span>
           </div>
 
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-slate-800">
             {resumes.map((resume) => {
               const isProcessed = resume.status === "processed";
               const isAnalyzing = analyzingResumeId === resume.resumeId;
@@ -37,34 +42,36 @@ export function ResumeList({ analyzingResumeId, deletingResumeId, onAnalyze, onD
 
               return (
                 <div
-                  className="grid gap-4 px-4 py-4 transition-colors hover:bg-slate-50/70 lg:grid-cols-[1.5fr_120px_120px_170px_220px] lg:items-center lg:gap-4"
+                  className="grid gap-4 px-4 py-4 transition-colors hover:bg-slate-800/40 xl:grid-cols-[1.45fr_120px_110px_160px_230px] xl:items-center xl:gap-4"
                   key={resume.resumeId}
                 >
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="hidden size-9 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 sm:flex">
-                      <FileText aria-hidden="true" size={17} />
+                    <div className="hidden size-10 shrink-0 items-center justify-center rounded-2xl border border-slate-800 bg-slate-800/60 text-blue-400 sm:flex">
+                      <FileText aria-hidden="true" size={18} />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-950">{resume.fileName}</p>
+                      <p className="truncate text-sm font-semibold text-slate-50">{resume.fileName}</p>
                       <p className="mt-1 truncate text-xs text-slate-500">{resume.filePath}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 lg:block">
-                    <span className="text-xs font-medium uppercase text-slate-500 lg:hidden">Status</span>
+                  <div className="flex items-center justify-between gap-3 xl:block">
+                    <span className="text-xs font-semibold uppercase text-slate-500 xl:hidden">Status</span>
                     <StatusBadge status={resume.status} />
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-sm text-slate-600 lg:block">
-                    <span className="text-xs font-medium uppercase text-slate-500 lg:hidden">Size</span>
+                  <div className="flex items-center justify-between gap-3 text-sm text-slate-400 xl:block">
+                    <span className="text-xs font-semibold uppercase text-slate-500 xl:hidden">Size</span>
                     {formatFileSize(resume.fileSize)}
                   </div>
-                  <div className="flex items-center justify-between gap-3 text-sm text-slate-600 lg:block">
-                    <span className="text-xs font-medium uppercase text-slate-500 lg:hidden">Uploaded</span>
+                  <div className="flex items-center justify-between gap-3 text-sm text-slate-400 xl:block">
+                    <span className="text-xs font-semibold uppercase text-slate-500 xl:hidden">Uploaded</span>
                     {formatDate(resume.createdAt)}
                   </div>
 
-                  <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
+                  {/* One filled verb carries the row's main action; the rest are
+                      quiet icon controls so four buttons stop competing. */}
+                  <div className="flex items-center justify-start gap-1.5 xl:justify-end">
                     <Button
                       disabled={!isProcessed || Boolean(analyzingResumeId)}
                       isLoading={isAnalyzing}
@@ -74,19 +81,38 @@ export function ResumeList({ analyzingResumeId, deletingResumeId, onAnalyze, onD
                     >
                       Analyze
                     </Button>
-                    <LinkButton size="sm" to={`/app/analysis?resumeId=${resume.resumeId}`} variant="secondary">
+
+                    <span aria-hidden="true" className="mx-1 h-5 w-px bg-slate-800" />
+
+                    <LinkButton
+                      aria-label={`View details for ${resume.fileName}`}
+                      size="icon"
+                      title="Details"
+                      to={`/app/resumes/${resume.resumeId}`}
+                      variant="ghost"
+                    >
                       <Eye aria-hidden="true" size={16} />
-                      History
+                    </LinkButton>
+                    <LinkButton
+                      aria-label={`View analysis history for ${resume.fileName}`}
+                      size="icon"
+                      title="Analysis history"
+                      to={`/app/analysis?resumeId=${resume.resumeId}`}
+                      variant="ghost"
+                    >
+                      <History aria-hidden="true" size={16} />
                     </LinkButton>
                     <Button
+                      aria-label={`Delete ${resume.fileName}`}
+                      className="hover:text-red-400"
                       disabled={Boolean(deletingResumeId)}
                       isLoading={isDeleting}
-                      leftIcon={<Trash2 aria-hidden="true" size={16} />}
                       onClick={() => onDelete(resume)}
-                      size="sm"
-                      variant="danger"
+                      size="icon"
+                      title="Delete"
+                      variant="ghost"
                     >
-                      Delete
+                      <Trash2 aria-hidden="true" size={16} />
                     </Button>
                   </div>
                 </div>

@@ -36,34 +36,34 @@ export function Modal({ children, className, description, footer, isOpen, onClos
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
       <div
         aria-describedby={description ? "modal-description" : undefined}
         aria-labelledby="modal-title"
         aria-modal="true"
         className={cn(
-          "animate-subtle-pop w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.24)]",
+          "animate-subtle-pop w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_24px_90px_rgba(0,0,0,0.5)]",
           className,
         )}
         role="dialog"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-4 sm:px-6">
           <div>
-            <h2 className="text-base font-semibold text-slate-950" id="modal-title">
+            <h2 className="text-base font-semibold text-slate-50" id="modal-title">
               {title}
             </h2>
             {description ? (
-              <p className="mt-1 text-sm leading-6 text-slate-600" id="modal-description">
+              <p className="mt-1 text-sm leading-6 text-slate-400" id="modal-description">
                 {description}
               </p>
             ) : null}
           </div>
-          <Button aria-label="Close modal" className="size-8 px-0" onClick={onClose} size="sm" variant="ghost">
+          <Button aria-label="Close modal" className="size-9 px-0" onClick={onClose} size="sm" variant="ghost">
             <X aria-hidden="true" size={18} />
           </Button>
         </div>
-        <div className="p-5">{children}</div>
-        {footer ? <div className="border-t border-slate-200 bg-slate-50/70 p-5">{footer}</div> : null}
+        <div className="p-5 sm:p-6">{children}</div>
+        {footer ? <div className="border-t border-slate-800 bg-slate-950/40 p-5 sm:p-6">{footer}</div> : null}
       </div>
     </div>
   );

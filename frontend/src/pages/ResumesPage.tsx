@@ -3,38 +3,35 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { PageHeader } from "../components/layout/PageHeader";
-import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, ErrorState, Modal, Skeleton, useToast } from "../components/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, ErrorState, LinkButton, Modal, Skeleton, useToast } from "../components/ui";
 import { AnalysisService } from "../features/analysis/AnalysisService";
 import { ResumeList } from "../features/resume/components/ResumeList";
-import { ResumeUpload } from "../features/resume/components/ResumeUpload";
 import { ResumeService } from "../features/resume/ResumeService";
-import type { ResumeDetail, ResumeSummary } from "../types/resume";
+import type { ResumeSummary } from "../types/resume";
 import { getApiErrorMessage } from "../utils/apiError";
 
 function ResumeListSkeleton() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Uploaded Resumes</CardTitle>
+        <CardTitle>Resume Library</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden rounded-lg border border-slate-200">
-          <div className="hidden grid-cols-[1.5fr_120px_120px_170px_220px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 lg:grid">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton className="h-3 w-20" key={index} />
-            ))}
+        <div className="overflow-hidden rounded-2xl border border-slate-800">
+          <div className="hidden grid-cols-[1.45fr_120px_120px_170px_280px] gap-4 border-b border-slate-800 bg-slate-800/40 px-4 py-3 xl:grid">
+            {Array.from({ length: 5 }).map((_, index) => <Skeleton className="h-3 w-20" key={index} />)}
           </div>
           <div className="divide-y divide-slate-200">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div className="grid gap-3 px-4 py-4 lg:grid-cols-[1.5fr_120px_120px_170px_220px] lg:items-center lg:gap-4" key={index}>
+              <div className="grid gap-3 px-4 py-4 xl:grid-cols-[1.45fr_120px_120px_170px_280px] xl:items-center xl:gap-4" key={index}>
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-48 max-w-full" />
                   <Skeleton className="h-3 w-64 max-w-full" />
                 </div>
-                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-7 w-24 rounded-full" />
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-24" />
-                <div className="flex gap-2 lg:justify-end">
+                <div className="flex gap-2 xl:justify-end">
                   <Skeleton className="h-9 w-20" />
                   <Skeleton className="h-9 w-20" />
                   <Skeleton className="h-9 w-20" />
@@ -76,10 +73,6 @@ export function ResumesPage() {
     void loadResumes();
   }, [loadResumes]);
 
-  const handleUploaded = (resume: ResumeDetail, _message: string) => {
-    setResumes((currentResumes) => [resume, ...currentResumes]);
-  };
-
   const handleCreateAnalysis = async (resume: ResumeSummary) => {
     setAnalyzingResumeId(resume.resumeId);
     setError(null);
@@ -87,11 +80,7 @@ export function ResumesPage() {
 
     try {
       const response = await AnalysisService.createAnalysis(resume.resumeId);
-      updateToast(toastId, {
-        description: "Opening the generated feedback.",
-        title: "Analysis ready",
-        tone: "success",
-      });
+      updateToast(toastId, { description: "Opening the generated feedback.", title: "Analysis ready", tone: "success" });
       navigate(`/app/analysis/${response.data.analysis.analysisId}`);
     } catch (analysisError) {
       const message = getApiErrorMessage(analysisError);
@@ -126,17 +115,22 @@ export function ResumesPage() {
   };
 
   return (
-    <div>
+    <div className="animate-surface-in">
       <PageHeader
-        description="Upload PDF resumes, review processing status, and generate detailed analysis."
-        title="Resumes"
+        actions={
+          <LinkButton to="/app/upload">
+            <UploadCloud aria-hidden="true" size={17} />
+            Upload resume
+          </LinkButton>
+        }
+        description="Manage every resume version, processing status, and generated analysis from one focused library."
+        eyebrow="Library"
+        title="Resume Library"
       />
 
       <div className="space-y-6">
-        <ResumeUpload onUploaded={handleUploaded} />
-
         {error && !isLoading && resumes.length ? (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
             {error}
           </div>
         ) : null}
@@ -156,11 +150,12 @@ export function ResumesPage() {
         ) : (
           <EmptyState
             action={
-              <Button leftIcon={<UploadCloud aria-hidden="true" size={16} />} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} variant="secondary">
+              <LinkButton to="/app/upload">
+                <UploadCloud aria-hidden="true" size={16} />
                 Upload Resume
-              </Button>
+              </LinkButton>
             }
-            description="Add your first PDF resume to start generating structured feedback."
+            description="Add your first PDF resume to unlock AI scoring, ATS insights, and improvement recommendations."
             icon={FileText}
             title="No resumes uploaded"
           />
@@ -182,8 +177,8 @@ export function ResumesPage() {
         onClose={() => setDeleteTarget(null)}
         title="Delete resume"
       >
-        <p className="text-sm leading-6 text-slate-600">
-          This will delete <span className="font-medium text-slate-950">{deleteTarget?.fileName}</span> and remove its uploaded file.
+        <p className="text-sm leading-6 text-slate-400">
+          This will delete <span className="font-semibold text-slate-50">{deleteTarget?.fileName}</span> and remove its uploaded file.
         </p>
       </Modal>
     </div>

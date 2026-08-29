@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import authRouter from "./modules/auth/auth.routes.js";
 import analysisRouter from "./modules/analysis/analysis.routes.js";
 import resumeRouter from "./modules/resume/resume.routes.js";
+import jobDescriptionRouter from "./modules/jobDescription/jobDescription.routes.js";
+import matchRouter from "./modules/match/match.routes.js";
 import { ApiResponse } from "./utils/api-response.js";
 import { ApiError } from "./utils/api-error.js";
 import {
@@ -102,6 +104,8 @@ app.get("/api/v1/health", healthcheck);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/analysis", analysisRouter);
 app.use("/api/v1/resumes", resumeRouter);
+app.use("/api/v1/job-descriptions", jobDescriptionRouter);
+app.use("/api/v1/matches", matchRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

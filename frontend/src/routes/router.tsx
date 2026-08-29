@@ -4,14 +4,20 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { GlobalLayout } from "../components/layout/GlobalLayout";
 import { AnalysisDetailsPage } from "../pages/AnalysisDetailsPage";
 import { AnalysisHistoryPage } from "../pages/AnalysisHistoryPage";
+import { AnalyticsPage } from "../pages/AnalyticsPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { JobDescriptionsPage } from "../pages/JobDescriptionsPage";
+import { LandingPage } from "../pages/LandingPage";
 import { LoginPage } from "../pages/LoginPage";
+import { MatchDetailsPage } from "../pages/MatchDetailsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { ProfilePage } from "../pages/ProfilePage";
 import { RegisterPage } from "../pages/RegisterPage";
+import { ResumeDetailsPage } from "../pages/ResumeDetailsPage";
 import { ResumesPage } from "../pages/ResumesPage";
+import { UploadResumePage } from "../pages/UploadResumePage";
 import { GuestRoute } from "./GuestRoute";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { RootRedirect } from "./RootRedirect";
 
 export const router = createBrowserRouter([
   {
@@ -20,7 +26,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <RootRedirect />,
+        element: <LandingPage />,
       },
       {
         element: <GuestRoute />,
@@ -47,8 +53,16 @@ export const router = createBrowserRouter([
                 element: <DashboardPage />,
               },
               {
+                path: "upload",
+                element: <UploadResumePage />,
+              },
+              {
                 path: "resumes",
                 element: <ResumesPage />,
+              },
+              {
+                path: "resumes/:resumeId",
+                element: <ResumeDetailsPage />,
               },
               {
                 path: "analysis",
@@ -57,6 +71,22 @@ export const router = createBrowserRouter([
               {
                 path: "analysis/:analysisId",
                 element: <AnalysisDetailsPage />,
+              },
+              {
+                path: "job-descriptions",
+                element: <JobDescriptionsPage />,
+              },
+              {
+                path: "matches/:matchId",
+                element: <MatchDetailsPage />,
+              },
+              {
+                path: "analytics",
+                element: <AnalyticsPage />,
+              },
+              {
+                path: "profile",
+                element: <ProfilePage />,
               },
             ],
           },

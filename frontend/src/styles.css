@@ -6,13 +6,23 @@
     sans-serif;
 }
 
+:root {
+  --ic-ink: #f8fafc;
+  --ic-muted: #94a3b8;
+  --ic-border: #1e293b;
+  --ic-blue: #3b82f6;
+  --ic-blue-dark: #2563eb;
+  --ic-surface: #0f172a;
+  --ic-page: #020617;
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
   font-family: var(--font-sans);
-  background: #f7f8fb;
+  background: var(--ic-surface);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -22,10 +32,13 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(15, 23, 42, 0.045), transparent 28rem),
-    #f7f8fb;
-  color: #0f172a;
+  background: linear-gradient(180deg, #020617 0%, #0f172a 48%, #020617 100%);
+  color: var(--ic-ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 button,
@@ -40,8 +53,8 @@ button {
 }
 
 ::selection {
-  background: #dbeafe;
-  color: #0f172a;
+  background: #1d4ed8;
+  color: #f8fafc;
 }
 
 @keyframes toast-in {
@@ -68,6 +81,24 @@ button {
   }
 }
 
+@keyframes surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .animate-toast-in {
   animation: toast-in 180ms ease-out;
 }
@@ -75,3 +106,15 @@ button {
 .animate-subtle-pop {
   animation: subtle-pop 220ms ease-out;
 }
+
+.animate-surface-in {
+  animation: surface-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.premium-grid {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+

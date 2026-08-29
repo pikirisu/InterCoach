@@ -49,10 +49,10 @@ const iconMap = {
 } satisfies Record<ToastTone, typeof CheckCircle2>;
 
 const toneClasses: Record<ToastTone, string> = {
-  success: "border-emerald-200 text-emerald-700",
-  error: "border-red-200 text-red-700",
-  info: "border-slate-200 text-slate-700",
-  loading: "border-slate-200 text-slate-700",
+  success: "border-emerald-500/30 text-emerald-400",
+  error: "border-red-500/30 text-red-400",
+  info: "border-slate-700 text-slate-300",
+  loading: "border-blue-500/30 text-blue-400",
 };
 
 const makeToastId = () => {
@@ -131,10 +131,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     [],
   );
 
-  const value = useMemo<ToastContextValue>(
-    () => ({ dismissToast, showToast, updateToast }),
-    [dismissToast, showToast, updateToast],
-  );
+  const value = useMemo<ToastContextValue>(() => ({ dismissToast, showToast, updateToast }), [dismissToast, showToast, updateToast]);
 
   return (
     <ToastContext.Provider value={value}>
@@ -150,23 +147,20 @@ export function ToastProvider({ children }: ToastProviderProps) {
           return (
             <div
               className={cn(
-                "animate-toast-in pointer-events-auto flex gap-3 rounded-lg border bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.14)]",
+                "animate-toast-in pointer-events-auto flex gap-3 rounded-2xl border bg-slate-900 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl",
                 toneClasses[toast.tone],
               )}
               key={toast.id}
               role={toast.tone === "error" ? "alert" : "status"}
             >
-              <Icon
-                aria-hidden="true"
-                className={cn("mt-0.5 size-5 shrink-0", toast.tone === "loading" && "animate-spin")}
-              />
+              <Icon aria-hidden="true" className={cn("mt-0.5 size-5 shrink-0", toast.tone === "loading" && "animate-spin")} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-950">{toast.title}</p>
-                {toast.description ? <p className="mt-1 text-sm leading-5 text-slate-600">{toast.description}</p> : null}
+                <p className="text-sm font-semibold text-slate-50">{toast.title}</p>
+                {toast.description ? <p className="mt-1 text-sm leading-5 text-slate-400">{toast.description}</p> : null}
               </div>
               <button
                 aria-label="Dismiss notification"
-                className="-mr-1 -mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+                className="-mr-1 -mt-1 flex size-8 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-800 hover:text-slate-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20"
                 onClick={() => dismissToast(toast.id)}
                 type="button"
               >

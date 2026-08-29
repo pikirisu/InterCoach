@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -14,10 +13,11 @@ const userSchema = new Schema({
   email: {
     type: String,
     required: true,
+    // `unique` already builds the index; declaring `index` too registers a
+    // duplicate and makes Mongoose warn on boot.
     unique: true,
     trim: true,
     lowercase: true,
-    index: true,
   },
   password: {
     type: String,
@@ -33,10 +33,11 @@ const userSchema = new Schema({
     default: 0,
     min: 0,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+}, {
+  // Matches every other model in the codebase. Existing documents keep the
+  // `createdAt` the old manual default wrote; `updatedAt` fills in on their
+  // next save, which login, logout, and refresh all perform.
+  timestamps: true,
 });
 
 userSchema.pre("save", async function () {

@@ -12,6 +12,8 @@ tags:
   - name: Auth
   - name: Resumes
   - name: Analysis
+  - name: JobDescriptions
+  - name: Matches
 
 paths:
   /api/v1/health:
@@ -359,6 +361,233 @@ paths:
         "404":
           $ref: "#/components/responses/Error"
 
+  /api/v1/job-descriptions:
+    get:
+      tags: [JobDescriptions]
+      summary: List job descriptions saved by the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Job description list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          jobDescriptions:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/JobDescriptionSummary"
+        "401":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [JobDescriptions]
+      summary: Save a job description and extract its requirements
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, rawText]
+              properties:
+                title:
+                  type: string
+                  example: Backend Engineer
+                company:
+                  type: string
+                  example: Acme Corp
+                rawText:
+                  type: string
+                  minLength: 50
+                  maxLength: 20000
+      responses:
+        "201":
+          description: Job description created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          jobDescription:
+                            $ref: "#/components/schemas/JobDescriptionDetail"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/job-descriptions/{jobDescriptionId}:
+    get:
+      tags: [JobDescriptions]
+      summary: Fetch one owned job description
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/JobDescriptionId"
+      responses:
+        "200":
+          description: Job description details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          jobDescription:
+                            $ref: "#/components/schemas/JobDescriptionDetail"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [JobDescriptions]
+      summary: Delete one owned job description
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/JobDescriptionId"
+      responses:
+        "200":
+          description: Job description deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          jobDescriptionId:
+                            type: string
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/matches/resume/{resumeId}/job-description/{jobDescriptionId}:
+    post:
+      tags: [Matches]
+      summary: Run a deterministic skill match between an owned resume and job description
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ResumeId"
+        - $ref: "#/components/parameters/JobDescriptionId"
+      responses:
+        "201":
+          description: Match created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          match:
+                            $ref: "#/components/schemas/Match"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/matches/resume/{resumeId}:
+    get:
+      tags: [Matches]
+      summary: List matches for an owned resume
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ResumeId"
+      responses:
+        "200":
+          description: Match history
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          matches:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Match"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
+  /api/v1/matches/{matchId}:
+    get:
+      tags: [Matches]
+      summary: Fetch one owned match
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Match details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          match:
+                            $ref: "#/components/schemas/Match"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -369,6 +598,12 @@ components:
   parameters:
     ResumeId:
       name: resumeId
+      in: path
+      required: true
+      schema:
+        type: string
+    JobDescriptionId:
+      name: jobDescriptionId
       in: path
       required: true
       schema:
@@ -468,6 +703,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     ResumeSummary:
       type: object
@@ -520,6 +758,89 @@ components:
           items:
             type: string
         weaknesses:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        aiModel:
+          type: string
+        errorMessage:
+          type:
+            - string
+            - "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    JobDescriptionSummary:
+      type: object
+      properties:
+        jobDescriptionId:
+          type: string
+        title:
+          type: string
+        company:
+          type: string
+        requirementsStatus:
+          type: string
+          enum: [pending, extracted, failed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    JobDescriptionDetail:
+      allOf:
+        - $ref: "#/components/schemas/JobDescriptionSummary"
+        - type: object
+          properties:
+            rawText:
+              type: string
+            mustHaveSkills:
+              type: array
+              items:
+                type: string
+            niceToHaveSkills:
+              type: array
+              items:
+                type: string
+            keyResponsibilities:
+              type: array
+              items:
+                type: string
+
+    Match:
+      type: object
+      properties:
+        matchId:
+          type: string
+        resumeId:
+          type: string
+        jobDescriptionId:
+          type: string
+        status:
+          type: string
+          enum: [processing, completed, failed]
+        matchScore:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 100
+          description: Computed deterministically from skill coverage, not generated by the AI model.
+        matchedSkills:
+          type: array
+          items:
+            type: string
+        missingSkills:
           type: array
           items:
             type: string

@@ -1,92 +1,87 @@
-import { AlertTriangle, Bot, CheckCircle2, Lightbulb, TrendingUp } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { AlertTriangle, Bot, CheckCircle2, FileText, Lightbulb, Target, TrendingUp } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, StatusBadge } from "../../../components/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  MetricTile,
+  ResultCard,
+  ScoreCircle,
+  StatusBadge,
+} from "../../../components/ui";
 import type { AnalysisRecord } from "../../../types/analysis";
+import type { ResumeDetail } from "../../../types/resume";
 import { formatDate } from "../../../utils/format";
 
 interface AnalysisDetailsProps {
   analysis: AnalysisRecord;
+  resume?: ResumeDetail | null;
 }
 
-function MetricTile({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-        <Icon aria-hidden="true" size={16} />
-        {label}
-      </div>
-      <p className="mt-3 text-2xl font-semibold text-slate-950">{value}</p>
-    </div>
-  );
+function getScore(analysis: AnalysisRecord) {
+  return typeof analysis.overallScore === "number" ? analysis.overallScore : 0;
 }
 
-function ResultList({ icon: Icon, items, title }: { icon: LucideIcon; items: string[]; title: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-700">
-            <Icon aria-hidden="true" size={16} />
-          </div>
-          <CardTitle className="text-base">{title}</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {items.length ? (
-          <ul className="space-y-2 text-sm text-slate-700">
-            {items.map((item) => (
-              <li className="rounded-md border border-slate-200 bg-white px-3 py-2.5 leading-6" key={item}>
-                {item}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-slate-500">
-            No items returned for this section.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+export function AnalysisDetails({ analysis, resume }: AnalysisDetailsProps) {
+  const overallScore = getScore(analysis);
+  const previewText = resume?.extractedText?.trim() || "Resume preview is unavailable for this analysis. Open the resume details page once extraction is complete.";
 
-export function AnalysisDetails({ analysis }: AnalysisDetailsProps) {
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle>Analysis Details</CardTitle>
-              <CardDescription>Created {formatDate(analysis.createdAt)}</CardDescription>
+              <CardTitle>Analysis overview</CardTitle>
+              <CardDescription>Created {formatDate(analysis.createdAt)} with {analysis.aiModel || "the configured AI model"}.</CardDescription>
             </div>
             <StatusBadge status={analysis.status} />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <MetricTile
-              icon={TrendingUp}
-              label="Overall Score"
-              value={typeof analysis.overallScore === "number" ? String(analysis.overallScore) : "--"}
-            />
-            <MetricTile icon={Bot} label="AI Model" value={analysis.aiModel || "Not available"} />
-            <MetricTile icon={CheckCircle2} label="Last Updated" value={formatDate(analysis.updatedAt)} />
+          <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+            <ScoreCircle label="Overall score" score={overallScore} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <MetricTile icon={Bot} label="AI model" value={analysis.aiModel || "Not available"} />
+              <MetricTile icon={TrendingUp} label="Last updated" value={formatDate(analysis.updatedAt)} />
+              <MetricTile icon={Target} label="Strengths" value={String(analysis.strengths.length)} />
+              <MetricTile icon={AlertTriangle} label="Weaknesses" value={String(analysis.weaknesses.length)} />
+            </div>
           </div>
 
           {analysis.errorMessage ? (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm leading-6 text-red-700" role="alert">
+            <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-400" role="alert">
               {analysis.errorMessage}
             </div>
           ) : null}
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <ResultList icon={CheckCircle2} items={analysis.strengths} title="Strengths" />
-        <ResultList icon={AlertTriangle} items={analysis.weaknesses} title="Weaknesses" />
-        <ResultList icon={Lightbulb} items={analysis.recommendations} title="Recommendations" />
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-2xl border border-slate-800 bg-slate-800/60 text-slate-300">
+              <FileText aria-hidden="true" size={18} />
+            </div>
+            <div>
+              <CardTitle>Resume preview</CardTitle>
+              <CardDescription>{resume?.fileName ?? `Resume ${analysis.resumeId}`}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[620px] overflow-auto rounded-2xl border border-slate-800 bg-slate-800/60 p-5 shadow-inner">
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-7 text-slate-300">{previewText}</pre>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <ResultCard icon={CheckCircle2} items={analysis.strengths} title="Strengths" tone="border-emerald-500/20 bg-emerald-500/10 text-emerald-400" />
+        <ResultCard icon={AlertTriangle} items={analysis.weaknesses} title="Weaknesses" tone="border-red-500/20 bg-red-500/10 text-red-400" />
+        <ResultCard icon={Lightbulb} items={analysis.recommendations} title="Improvement suggestions" tone="border-amber-500/20 bg-amber-500/10 text-amber-400" />
       </div>
     </div>
   );

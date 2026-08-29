@@ -14,6 +14,20 @@ const buildStoredFilePath = (absolutePath) =>
 const getAbsoluteFilePath = (storedPath) =>
   path.join(process.cwd(), storedPath);
 
+const safeUnlink = async (filePath) => {
+  if (!filePath) {
+    return;
+  }
+
+  try {
+    await fs.unlink(filePath);
+  } catch (unlinkError) {
+    if (unlinkError.code !== "ENOENT") {
+      console.error(unlinkError);
+    }
+  }
+};
+
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
 const serializeResumeSummary = (resume) => ({
@@ -43,7 +57,7 @@ export const uploadResume = async (req, res) => {
     const isValidPdf = await validatePdf(req.file.path);
 
     if (!isValidPdf) {
-      await fs.unlink(req.file.path);
+      await safeUnlink(req.file.path);
 
       throw new ApiError(400, "Uploaded file is not a valid PDF.");
     }
@@ -70,6 +84,10 @@ export const uploadResume = async (req, res) => {
       resume.status = ResumeStatusEnum.FAILED;
       await resume.save();
 
+      // The stored PDF is unusable once extraction fails: nothing serves it and
+      // no retry path re-reads it, so drop the bytes instead of orphaning them.
+      await safeUnlink(req.file.path);
+
       throw new ApiError(
         500,
         "Resume uploaded but text extraction failed",
@@ -94,14 +112,8 @@ export const uploadResume = async (req, res) => {
       ),
     );
   } catch (error) {
-    if (!resume && req.file?.path) {
-      try {
-        await fs.unlink(req.file.path);
-      } catch (unlinkError) {
-        if (unlinkError.code !== "ENOENT") {
-          console.error(unlinkError);
-        }
-      }
+    if (!resume) {
+      await safeUnlink(req.file?.path);
     }
 
     throw error;
@@ -171,15 +183,9 @@ export const deleteResume = async (req, res) => {
     throw new ApiError(404, "Resume not found");
   }
 
-  const absoluteFilePath = getAbsoluteFilePath(resume.filePath);
-
-  try {
-    await fs.unlink(absoluteFilePath);
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
-    }
-  }
+  // The document is already gone, so a failed unlink must not surface as a 500 —
+  // it would report the delete as failed after it had actually succeeded.
+  await safeUnlink(getAbsoluteFilePath(resume.filePath));
 
   return res.status(200).json(
     new ApiResponse(

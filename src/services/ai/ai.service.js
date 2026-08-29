@@ -1,4 +1,6 @@
 import { normalizeAnalysisPayload } from "../../modules/analysis/analysis.validation.js";
+import { normalizeJdRequirementsPayload } from "../../modules/jobDescription/jobDescription.validation.js";
+import { normalizeMatchRecommendationsPayload } from "../../modules/match/match.validation.js";
 
 const AI_PROVIDERS = {
   OPENAI: "openai",
@@ -25,6 +27,58 @@ Rules:
 - Do not include markdown or code fences.
 - Keep each string concise and specific.
 - Focus on resume quality, clarity, impact, structure, and relevance.
+`;
+
+const JD_EXTRACTION_PROMPT = `
+Extract structured hiring requirements from the following job description and respond with strict JSON.
+
+Required JSON shape:
+{
+  "mustHaveSkills": ["short canonical skill", "short canonical skill"],
+  "niceToHaveSkills": ["short canonical skill", "short canonical skill"],
+  "keyResponsibilities": ["short bullet", "short bullet"]
+}
+
+Rules:
+- Do not include markdown or code fences.
+- Use short canonical skill/technology names (e.g. "React", "AWS", "SQL"), not full sentences.
+- List at most 15 items per array, no duplicates.
+- Only include skills explicitly required or preferred by the posting, not inferred ones.
+`;
+
+const MATCH_RECOMMENDATIONS_PROMPT = `
+A candidate's resume is being compared against a job description. The match score and matched/missing
+skills provided below were already computed by deterministic code, not by you - do not recompute,
+restate, or contradict them.
+
+Respond with strict JSON:
+{
+  "recommendations": ["actionable bullet", "actionable bullet"]
+}
+
+Rules:
+- Do not include markdown or code fences.
+- Give specific phrasing/placement guidance for closing the gaps in the missing-skills list.
+- Do not simply repeat the missing-skills list as the only content.
+- Keep each bullet concise and specific, at most 8 bullets.
+`;
+
+const buildMatchRecommendationsContent = ({
+  resumeText,
+  jobDescriptionText,
+  matchedSkills,
+  missingSkills,
+  matchScore,
+}) => `
+Match score: ${matchScore}/100
+Matched skills: ${matchedSkills.join(", ") || "none"}
+Missing skills: ${missingSkills.join(", ") || "none"}
+
+Job description:
+${jobDescriptionText}
+
+Resume:
+${resumeText}
 `;
 
 const getConfiguredProvider = () =>
@@ -77,7 +131,7 @@ const parseJsonPayload = (value) => {
   }
 };
 
-const callOpenAI = async (resumeText) => {
+const callOpenAI = async (systemPrompt, userContent) => {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not configured");
   }
@@ -96,11 +150,11 @@ const callOpenAI = async (resumeText) => {
       messages: [
         {
           role: "system",
-          content: ANALYSIS_PROMPT,
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: resumeText,
+          content: userContent,
         },
       ],
     }),
@@ -115,10 +169,10 @@ const callOpenAI = async (resumeText) => {
   }
 
   const content = responseBody?.choices?.[0]?.message?.content;
-  return normalizeAnalysisPayload(parseJsonPayload(content));
+  return parseJsonPayload(content);
 };
 
-const callGemini = async (resumeText) => {
+const callGemini = async (systemPrompt, userContent) => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not configured");
   }
@@ -140,7 +194,7 @@ const callGemini = async (resumeText) => {
             role: "user",
             parts: [
               {
-                text: `${ANALYSIS_PROMPT}\n\nResume text:\n${resumeText}`,
+                text: `${systemPrompt}\n\n${userContent}`,
               },
             ],
           },
@@ -163,19 +217,47 @@ const callGemini = async (resumeText) => {
       .filter(Boolean)
       .join("\n") || "";
 
-  return normalizeAnalysisPayload(parseJsonPayload(content));
+  return parseJsonPayload(content);
 };
 
-export const generateResumeAnalysis = async (resumeText) => {
+const requestJson = async (systemPrompt, userContent) => {
   const provider = getConfiguredProvider();
 
   if (provider === AI_PROVIDERS.GEMINI) {
-    return callGemini(resumeText);
+    return callGemini(systemPrompt, userContent);
   }
 
   if (provider === AI_PROVIDERS.OPENAI) {
-    return callOpenAI(resumeText);
+    return callOpenAI(systemPrompt, userContent);
   }
 
   throw new Error(`Unsupported AI provider: ${provider}`);
+};
+
+export const generateResumeAnalysis = async (resumeText) => {
+  const payload = await requestJson(ANALYSIS_PROMPT, resumeText);
+  return normalizeAnalysisPayload(payload);
+};
+
+export const extractJobRequirements = async (jobDescriptionText) => {
+  const payload = await requestJson(JD_EXTRACTION_PROMPT, jobDescriptionText);
+  return normalizeJdRequirementsPayload(payload);
+};
+
+export const generateMatchRecommendations = async ({
+  resumeText,
+  jobDescriptionText,
+  matchedSkills,
+  missingSkills,
+  matchScore,
+}) => {
+  const content = buildMatchRecommendationsContent({
+    resumeText,
+    jobDescriptionText,
+    matchedSkills,
+    missingSkills,
+    matchScore,
+  });
+  const payload = await requestJson(MATCH_RECOMMENDATIONS_PROMPT, content);
+  return normalizeMatchRecommendationsPayload(payload);
 };

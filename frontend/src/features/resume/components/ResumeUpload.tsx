@@ -1,5 +1,5 @@
 import { FileText, Upload, UploadCloud } from "lucide-react";
-import { useId, useRef, useState, type ChangeEvent } from "react";
+import { useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, useToast } from "../../../components/ui";
 import type { ResumeDetail } from "../../../types/resume";
@@ -17,12 +17,22 @@ export function ResumeUpload({ onUploaded }: ResumeUploadProps) {
   const { showToast, updateToast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] ?? null;
+  const setSelectedFile = (selectedFile: File | null) => {
     setError(null);
     setFile(selectedFile);
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(event.target.files?.[0] ?? null);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    setSelectedFile(event.dataTransfer.files?.[0] ?? null);
   };
 
   const handleSubmit = async () => {
@@ -63,39 +73,48 @@ export function ResumeUpload({ onUploaded }: ResumeUploadProps) {
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
-            <UploadCloud aria-hidden="true" size={20} />
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-400">
+            <UploadCloud aria-hidden="true" size={21} />
           </div>
           <div>
-            <CardTitle className="text-lg">Upload Resume</CardTitle>
-            <CardDescription>Upload a PDF resume to extract text and prepare it for analysis.</CardDescription>
+            <CardTitle>Upload Resume</CardTitle>
+            <CardDescription>Drop in a PDF resume and InterCoach will prepare it for AI analysis.</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {error ? (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
             {error}
           </div>
         ) : null}
 
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
           <label
-            className="group flex min-h-20 cursor-pointer items-center gap-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 transition hover:border-slate-400 hover:bg-white"
+            className={[
+              "group flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-8 text-center transition duration-200",
+              isDragging ? "border-blue-400 bg-blue-500/10" : "border-slate-700 bg-slate-800/40 hover:border-blue-500/50 hover:bg-slate-800/60",
+            ].join(" ")}
             htmlFor={inputId}
+            onDragLeave={() => setIsDragging(false)}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsDragging(true);
+            }}
+            onDrop={handleDrop}
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm shadow-slate-950/[0.02]">
-              <FileText aria-hidden="true" size={19} />
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-blue-400">
+              <FileText aria-hidden="true" size={24} />
             </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-slate-950">
-                {file ? file.name : "Select PDF resume"}
+            <span className="mt-5 min-w-0">
+              <span className="block max-w-full truncate text-base font-semibold text-slate-50">
+                {file ? file.name : "Drop your PDF resume here"}
               </span>
-              <span className="mt-1 block text-sm text-slate-500">
-                {file ? `${formatFileSize(file.size)} selected` : "PDF files only"}
+              <span className="mt-2 block text-sm text-slate-500">
+                {file ? `${formatFileSize(file.size)} selected` : "or click to browse files"}
               </span>
             </span>
           </label>
@@ -107,17 +126,20 @@ export function ResumeUpload({ onUploaded }: ResumeUploadProps) {
             ref={fileInputRef}
             type="file"
           />
-          <Button
-            className="w-full lg:w-auto"
-            isLoading={isUploading}
-            leftIcon={<Upload aria-hidden="true" size={18} />}
-            onClick={handleSubmit}
-          >
-            {isUploading ? "Uploading" : "Upload resume"}
-          </Button>
+          <div className="rounded-2xl border border-slate-800 bg-slate-800/60 p-4 lg:w-64">
+            <p className="text-sm font-semibold text-slate-50">Ready when you are</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">PDF files are parsed into text before analysis, so reports can cite structure and content gaps.</p>
+            <Button
+              className="mt-5 w-full"
+              isLoading={isUploading}
+              leftIcon={<Upload aria-hidden="true" size={18} />}
+              onClick={handleSubmit}
+            >
+              {isUploading ? "Uploading" : "Upload resume"}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
-

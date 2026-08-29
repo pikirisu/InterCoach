@@ -1,5 +1,5 @@
-import { FileSearch, ListPlus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { FileSearch, ListPlus, UploadCloud } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { PageHeader } from "../components/layout/PageHeader";
@@ -12,33 +12,31 @@ import { getApiErrorMessage } from "../utils/apiError";
 function AnalysisHistorySkeleton() {
   return (
     <div>
-      <div className="mb-7 space-y-3">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-80 max-w-full" />
+      <div className="mb-8 space-y-3">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-5 w-96 max-w-full" />
       </div>
-      <Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => <Skeleton className="h-28 w-full" key={index} />)}
+      </div>
+      <Card className="mt-6">
         <CardHeader>
           <Skeleton className="h-5 w-36" />
           <Skeleton className="h-4 w-44" />
         </CardHeader>
         <CardContent>
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <div className="hidden grid-cols-[1.3fr_120px_120px_170px_110px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 lg:grid">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Skeleton className="h-3 w-20" key={index} />
-              ))}
+          <div className="overflow-hidden rounded-2xl border border-slate-800">
+            <div className="hidden grid-cols-[1.35fr_120px_120px_170px_130px] gap-4 border-b border-slate-800 bg-slate-800/40 px-4 py-3 xl:grid">
+              {Array.from({ length: 5 }).map((_, index) => <Skeleton className="h-3 w-20" key={index} />)}
             </div>
-            <div className="divide-y divide-slate-200">
+            <div className="divide-y divide-slate-800">
               {Array.from({ length: 5 }).map((_, index) => (
-                <div className="grid gap-4 px-4 py-4 lg:grid-cols-[1.3fr_120px_120px_170px_110px] lg:items-center" key={index}>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-48 max-w-full" />
-                    <Skeleton className="h-3 w-28" />
-                  </div>
-                  <Skeleton className="h-6 w-20 rounded-full" />
+                <div className="grid gap-4 px-4 py-4 xl:grid-cols-[1.35fr_120px_120px_170px_130px] xl:items-center" key={index}>
+                  <div className="space-y-2"><Skeleton className="h-4 w-48 max-w-full" /><Skeleton className="h-3 w-28" /></div>
+                  <Skeleton className="h-7 w-20 rounded-full" />
                   <Skeleton className="h-4 w-16" />
                   <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-9 w-20 lg:ml-auto" />
+                  <Skeleton className="h-9 w-20 xl:ml-auto" />
                 </div>
               ))}
             </div>
@@ -46,6 +44,17 @@ function AnalysisHistorySkeleton() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <p className="text-sm font-semibold text-slate-500">{label}</p>
+        <p className="mt-2 text-3xl font-semibold text-slate-50">{value}</p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -100,6 +109,12 @@ export function AnalysisHistoryPage() {
     void loadHistory();
   }, [loadHistory]);
 
+  const completedScores = useMemo(
+    () => analyses.map((analysis) => analysis.overallScore).filter((score): score is number => typeof score === "number"),
+    [analyses],
+  );
+  const averageScore = completedScores.length ? Math.round(completedScores.reduce((total, score) => total + score, 0) / completedScores.length) : 0;
+
   if (isLoading) {
     return <AnalysisHistorySkeleton />;
   }
@@ -109,12 +124,25 @@ export function AnalysisHistoryPage() {
   }
 
   return (
-    <div>
+    <div className="animate-surface-in">
       <PageHeader
-        actions={resumeId ? <LinkButton to="/app/analysis" variant="secondary">View All</LinkButton> : null}
-        description="Review generated resume analyses and open detailed feedback."
-        title="Analysis History"
+        actions={
+          resumeId ? (
+            <LinkButton to="/app/analysis" variant="secondary">View all reports</LinkButton>
+          ) : (
+            <LinkButton to="/app/upload"><UploadCloud aria-hidden="true" size={16} />Upload resume</LinkButton>
+          )
+        }
+        description="Review generated resume analyses and open detailed AI feedback reports."
+        eyebrow="Analysis"
+        title="AI Analysis History"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <SummaryCard label="Reports" value={String(analyses.length)} />
+        <SummaryCard label="Completed" value={String(analyses.filter((analysis) => analysis.status === "completed").length)} />
+        <SummaryCard label="Average score" value={completedScores.length ? String(averageScore) : "--"} />
+      </div>
 
       {analyses.length ? (
         <AnalysisList analyses={analyses} />
@@ -123,10 +151,10 @@ export function AnalysisHistoryPage() {
           action={
             <LinkButton to="/app/resumes">
               <ListPlus aria-hidden="true" size={16} />
-              Go to Resumes
+              Go to Library
             </LinkButton>
           }
-          description="Create an analysis from a processed resume to build your history."
+          description="Create an analysis from a processed resume to build your feedback history."
           icon={FileSearch}
           title="No analyses found"
         />
