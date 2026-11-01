@@ -1,12 +1,15 @@
 export { Button } from "./Button";
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./Card";
+export { DimensionBreakdown } from "./DimensionBreakdown";
 export { EmptyState } from "./EmptyState";
 export { ErrorState } from "./ErrorState";
+export { FindingCard } from "./FindingCard";
 export { Input } from "./Input";
 export { LinkButton } from "./LinkButton";
 export { MetricTile } from "./MetricTile";
 export { Modal } from "./Modal";
 export { PasswordInput } from "./PasswordInput";
+export { RecommendationCard } from "./RecommendationCard";
 export { ResultCard } from "./ResultCard";
 export { ScoreCircle } from "./ScoreCircle";
 export { Skeleton } from "./Skeleton";

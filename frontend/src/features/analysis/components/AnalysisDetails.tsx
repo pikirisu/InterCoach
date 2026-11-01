@@ -6,8 +6,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DimensionBreakdown,
+  FindingCard,
   MetricTile,
-  ResultCard,
+  RecommendationCard,
   ScoreCircle,
   StatusBadge,
 } from "../../../components/ui";
@@ -27,6 +29,9 @@ function getScore(analysis: AnalysisRecord) {
 export function AnalysisDetails({ analysis, resume }: AnalysisDetailsProps) {
   const overallScore = getScore(analysis);
   const previewText = resume?.extractedText?.trim() || "Resume preview is unavailable for this analysis. Open the resume details page once extraction is complete.";
+  const dimensions = analysis.dimensions ?? [];
+  const strengthCount = analysis.strengthDetails?.length ?? analysis.strengths.length;
+  const weaknessCount = analysis.weaknessDetails?.length ?? analysis.weaknesses.length;
 
   return (
     <div className="space-y-6">
@@ -42,12 +47,12 @@ export function AnalysisDetails({ analysis, resume }: AnalysisDetailsProps) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
-            <ScoreCircle label="Overall score" score={overallScore} />
+            <ScoreCircle label={analysis.scoreBand ? `Overall score - ${analysis.scoreBand}` : "Overall score"} score={overallScore} />
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricTile icon={Bot} label="AI model" value={analysis.aiModel || "Not available"} />
               <MetricTile icon={TrendingUp} label="Last updated" value={formatDate(analysis.updatedAt)} />
-              <MetricTile icon={Target} label="Strengths" value={String(analysis.strengths.length)} />
-              <MetricTile icon={AlertTriangle} label="Weaknesses" value={String(analysis.weaknesses.length)} />
+              <MetricTile icon={Target} label="Strengths" value={String(strengthCount)} />
+              <MetricTile icon={AlertTriangle} label="Weaknesses" value={String(weaknessCount)} />
             </div>
           </div>
 
@@ -58,6 +63,8 @@ export function AnalysisDetails({ analysis, resume }: AnalysisDetailsProps) {
           ) : null}
         </CardContent>
       </Card>
+
+      {dimensions.length ? <DimensionBreakdown dimensions={dimensions} /> : null}
 
       <Card className="overflow-hidden">
         <CardHeader>
@@ -79,9 +86,27 @@ export function AnalysisDetails({ analysis, resume }: AnalysisDetailsProps) {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <ResultCard icon={CheckCircle2} items={analysis.strengths} title="Strengths" tone="border-emerald-500/20 bg-emerald-500/10 text-emerald-400" />
-        <ResultCard icon={AlertTriangle} items={analysis.weaknesses} title="Weaknesses" tone="border-red-500/20 bg-red-500/10 text-red-400" />
-        <ResultCard icon={Lightbulb} items={analysis.recommendations} title="Improvement suggestions" tone="border-amber-500/20 bg-amber-500/10 text-amber-400" />
+        <FindingCard
+          fallbackItems={analysis.strengths}
+          findings={analysis.strengthDetails}
+          icon={CheckCircle2}
+          title="Strengths"
+          tone="border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+        />
+        <FindingCard
+          fallbackItems={analysis.weaknesses}
+          findings={analysis.weaknessDetails}
+          icon={AlertTriangle}
+          title="Weaknesses"
+          tone="border-red-500/20 bg-red-500/10 text-red-400"
+        />
+        <RecommendationCard
+          fallbackItems={analysis.recommendations}
+          icon={Lightbulb}
+          recommendations={analysis.recommendationDetails}
+          title="Improvement suggestions"
+          tone="border-amber-500/20 bg-amber-500/10 text-amber-400"
+        />
       </div>
     </div>
   );

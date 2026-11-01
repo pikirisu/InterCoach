@@ -753,20 +753,58 @@ components:
           type: integer
           minimum: 0
           maximum: 100
+          description: >-
+            Computed in code from the per-dimension levels below using fixed
+            rubric weights. The model never returns this number.
+        scoreBand:
+          type:
+            - string
+            - "null"
+          enum: [Needs work, Developing, Solid, Strong, Exceptional, null]
+        dimensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisDimension"
         strengths:
           type: array
+          description: Flattened observations from strengthDetails. Retained for existing clients.
           items:
             type: string
         weaknesses:
           type: array
+          description: Flattened observations from weaknessDetails. Retained for existing clients.
           items:
             type: string
-        recommendations:
+        strengthDetails:
           type: array
           items:
+            $ref: "#/components/schemas/AnalysisFinding"
+        weaknessDetails:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisFinding"
+        recommendations:
+          type: array
+          description: Flattened actions from recommendationDetails, in the same rank order. Retained for existing clients.
+          items:
             type: string
+        recommendationDetails:
+          type: array
+          description: >-
+            Ranked highest-value first. Ordering is computed in code from the
+            rubric, not returned by the model.
+          items:
+            $ref: "#/components/schemas/AnalysisRecommendation"
         aiModel:
           type: string
+        rubricVersion:
+          type:
+            - string
+            - "null"
+        promptVersion:
+          type:
+            - string
+            - "null"
         errorMessage:
           type:
             - string
@@ -777,6 +815,97 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    AnalysisDimension:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            [impact, technicalDepth, roleRelevance, structure, progression, signalQuality]
+        label:
+          type: string
+        weight:
+          type: integer
+          description: Percentage this dimension contributes to overallScore.
+          minimum: 0
+          maximum: 100
+        level:
+          type: string
+          enum: [weak, adequate, strong, exceptional]
+        evidenceVerified:
+          type: boolean
+          description: >-
+            False when every finding the model returned for this dimension
+            failed evidence verification and was discarded.
+
+    AnalysisFinding:
+      type: object
+      description: >-
+        An observation bound to a checkable span of the resume. Findings whose
+        evidence cannot be verified are discarded before the response is built.
+      properties:
+        dimension:
+          type: string
+          enum:
+            [impact, technicalDepth, roleRelevance, structure, progression, signalQuality]
+        dimensionLabel:
+          type: string
+        observation:
+          type: string
+        evidenceType:
+          type: string
+          enum: [quote, absence]
+          description: >-
+            "quote" means evidenceText was located verbatim in the resume.
+            "absence" means it was confirmed not to appear.
+        evidenceText:
+          type: string
+        impact:
+          type: string
+
+    AnalysisRecommendation:
+      type: object
+      description: >-
+        A suggested change bound to a checkable span of the resume.
+        Recommendations whose evidence cannot be verified, that name an unknown
+        dimension, or that repeat an earlier target are discarded before the
+        response is built.
+      properties:
+        dimension:
+          type: string
+          enum:
+            [impact, technicalDepth, roleRelevance, structure, progression, signalQuality]
+        dimensionLabel:
+          type: string
+        action:
+          type: string
+          description: The specific change to make.
+        rewrite:
+          type: string
+          description: >-
+            Paste-ready replacement line. Empty string when the advice is
+            structural rather than a rewrite of one line.
+        evidenceType:
+          type: string
+          enum: [quote, absence]
+          description: >-
+            "quote" means evidenceText is the existing line being changed.
+            "absence" means it is a term confirmed missing from the resume.
+        evidenceText:
+          type: string
+        scoreUpside:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >-
+            Score points still recoverable in this recommendation's dimension -
+            its full rubric weight when the level is weak, zero when it is
+            already exceptional. This is the sort key.
+        priority:
+          type: string
+          enum: [high, medium, low]
+          description: Band derived from scoreUpside (>=12 high, >=5 medium, else low).
 
     JobDescriptionSummary:
       type: object

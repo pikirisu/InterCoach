@@ -6,6 +6,7 @@ import {
   getConfiguredAIModel,
 } from "../../services/ai/ai.service.js";
 import { AnalysisStatusEnum } from "../../utils/constants.js";
+import { ANALYSIS_PROMPT_VERSION } from "../../utils/analysisRubric.js";
 import { ApiError } from "../../utils/api-error.js";
 
 const assertValidObjectId = (value, entityName) => {
@@ -48,15 +49,26 @@ export const createAnalysisForResume = async ({ resumeId, userId }) => {
     resume: resume._id,
     status: AnalysisStatusEnum.PROCESSING,
     aiModel: getConfiguredAIModel(),
+    promptVersion: ANALYSIS_PROMPT_VERSION,
   });
 
   try {
-    const analysisPayload = await generateResumeAnalysis(resume.extractedText);
+    const analysisPayload = await generateResumeAnalysis(resume.extractedText, {
+      // Ties the sampling seed to the resume, so re-running an analysis on the
+      // same resume follows the same decoding path.
+      seedSource: String(resume._id),
+    });
 
     analysis.overallScore = analysisPayload.overallScore;
+    analysis.scoreBand = analysisPayload.scoreBand;
+    analysis.dimensions = analysisPayload.dimensions;
+    analysis.strengthDetails = analysisPayload.strengthDetails;
+    analysis.weaknessDetails = analysisPayload.weaknessDetails;
     analysis.strengths = analysisPayload.strengths;
     analysis.weaknesses = analysisPayload.weaknesses;
+    analysis.recommendationDetails = analysisPayload.recommendationDetails;
     analysis.recommendations = analysisPayload.recommendations;
+    analysis.rubricVersion = analysisPayload.rubricVersion;
     analysis.status = AnalysisStatusEnum.COMPLETED;
     analysis.errorMessage = "";
 

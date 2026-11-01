@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: July 19, 2026
+Last updated: November 1, 2026
 
 ## Current State
 
@@ -57,18 +57,24 @@ Completed:
 Partial:
 
 - S3-05: GitHub Actions CI smoke-test workflow exists. Deployment automation still needs a chosen deployment platform.
+- S3-08: Advanced AI analysis features. Stage 1 shipped: rubric-based ordinal
+  rating, deterministic weighted scoring, evidence-bound findings, evidence-bound
+  and rubric-ranked recommendations, and deterministic sampling. Stage 2 still
+  open: target-role context, code-computed resume signals, response caching by
+  content hash, and a calibration test.
+
+- S3-04: Frontend client. A React + Vite + TypeScript client lives in `frontend/`
+  and covers the full flow. Not yet wired into CI.
 
 Not started:
 
 - S3-02: Cloud resume storage.
 - S3-03: Background jobs for AI analysis.
-- S3-04: Frontend client.
-- S3-08: Advanced AI analysis features.
 - S3-09: Database migration and seed strategy.
 
 ## Validation
 
-Latest validation date: July 19, 2026
+Latest validation date: November 1, 2026
 
 Validation command:
 
@@ -76,7 +82,32 @@ Validation command:
 npm test
 ```
 
-Result: passed, 8 tests.
+Result: 39 tests, 38 passing.
+
+One known failure, unrelated to the analysis work: `register validation errors use
+the central error envelope` expects `400`, but registration has returned `403`
+since registrations were closed (`auth.controller.js:68`). This is intentional: the
+pause is temporary, so the test stays as it is and gets revisited when registration
+reopens.
+
+Analysis scoring coverage (`test/analysis-scoring.test.js`, 24 tests):
+
+- Rubric weights total 100.
+- `computeOverallScore` is stable across repeated calls and spans 0-100.
+- Score-band boundaries.
+- Evidence verification: faithful quotes accepted, punctuation/spacing drift
+  tolerated, fabricated quotes rejected, over-short quotes rejected, genuine
+  absences accepted and false absences rejected.
+- A model-supplied `overallScore` is ignored in favour of the computed one.
+- Unverifiable findings are dropped without changing the score.
+- A run where no finding survives verification fails rather than returning blanks.
+- `computeScoreUpside` returns the points still recoverable per dimension.
+- Recommendations rank by recoverable score rather than by the order the model
+  emitted them, and the ranking is identical across repeated runs.
+- Free-text recommendations are rejected without failing the analysis.
+- Recommendation evidence is verified, unknown dimensions are rejected, repeated
+  targets are dropped, and the list is capped deterministically.
+- A two-word target passes for a recommendation but not for a finding.
 
 Current smoke coverage:
 
@@ -139,7 +170,7 @@ Note: the local sandbox blocked the Node test runner from spawning its worker pr
 9. `POST /api/v1/analysis/resume/:resumeId`
    - Auth: required
    - Expected status: `201`
-   - `data.analysis` fields: `analysisId`, `resumeId`, `status`, `overallScore`, `strengths`, `weaknesses`, `recommendations`, `aiModel`, `errorMessage`, `createdAt`, `updatedAt`
+   - `data.analysis` fields: `analysisId`, `resumeId`, `status`, `overallScore`, `scoreBand`, `dimensions`, `strengths`, `weaknesses`, `strengthDetails`, `weaknessDetails`, `recommendations`, `recommendationDetails`, `aiModel`, `rubricVersion`, `promptVersion`, `errorMessage`, `createdAt`, `updatedAt`
 
 10. `GET /api/v1/analysis/:analysisId`
     - Auth: required
@@ -178,6 +209,19 @@ Note: the local sandbox blocked the Node test runner from spawning its worker pr
 - PDF text extraction through `pdf-parse`.
 - Resume listing, detail fetch, and delete scoped to the authenticated user.
 - Analysis creation for an owned processed resume.
+- Rubric-based resume analysis: the model rates six weighted dimensions on a
+  four-level ordinal scale, and `src/utils/analysisRubric.js` computes
+  `overallScore` from those levels in code. The model never returns the score.
+- Evidence-bound findings: every strength and weakness must cite a verbatim
+  resume span (or a term confirmed absent). `src/utils/evidence.js` verifies each
+  one and discards findings that cannot be checked.
+- Evidence-bound, rubric-ranked recommendations: each suggestion names the
+  dimension it serves, the resume line it changes, and an optional paste-ready
+  rewrite. Ordering is computed in code from `computeScoreUpside` (the points
+  still recoverable in that dimension), so the top suggestion is always the
+  highest-leverage one and the order never changes between runs.
+- Deterministic sampling on both providers (`temperature: 0`, `top_p: 1`, plus a
+  resume-derived `seed` on OpenAI).
 - OpenAI and Gemini provider support through `src/services/ai/ai.service.js`.
 - Analysis detail and per-resume analysis history scoped to the authenticated user.
 - Safe `.env.example` with MongoDB, JWT, CORS, and AI provider placeholders.
@@ -205,6 +249,7 @@ The local `.env` should remain ignored and must not be committed.
 
 ## Repository Notes
 
-- The backend is the MVP target; no frontend app exists in this repository yet.
+- The backend is the MVP target. A React + Vite + TypeScript client lives in
+  `frontend/` and consumes the same API contract.
 - `PROJECT_STATUS.md`, `MVP_TASKS.md`, design docs, Postman collections, tests, Docker files, and OpenAPI docs should be tracked.
 - `uploads/`, `.env`, `node_modules/`, and local-only Postman metadata remain ignored.
